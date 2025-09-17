@@ -41,3 +41,23 @@ button {
   width: 100%;
   padding: 0.5em;
 }
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button {
+
+  
+  -webkit-appearance: auto;
+  margin: 0;
+  background-color: #242424;
+}
+
+input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
+    overflow: clip !important;
+    margin: 0;
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+    border: transparent;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: inherit;
+}

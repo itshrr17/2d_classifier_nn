@@ -1,18 +1,19 @@
 
-import { state, colors } from './db.js';
+import { state, colors, colorMapping } from './db.js';
 import { NeuralNetwork } from './model/model.js'
 
-// Map colors to indices
-const colorToIndex = {};
-colors.forEach((c, i) => colorToIndex[c] = i);
-
 // Convert Y to one-hot vectors
-function oneHotEncode(Y) {
-    return Y.map(c => {
-        const arr = new Array(colors.length).fill(0);
-        arr[colorToIndex[c]] = 1;
-        return arr;
-    });
+function encodeLabels(Y) {
+  const unique = [...new Set(Y)];
+  const map = Object.fromEntries(unique.map((c, i) => [c, i]));
+
+  const oneHot = Y.map(label => {
+    const arr = new Array(unique.length).fill(0);
+    arr[map[label]] = 1;
+    return arr;
+  });
+
+  return { oneHot, classes: unique, map };
 }
 
 function trainTestSplit(X, Y, testRatio = 0.2) {
@@ -57,24 +58,28 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   // Normalize X coordinates (assuming canvas width & height)
   const X_norm = X.map(([x, y]) => [x / 600, y / 600]); // becasuse canvas size is 600 x 600
-
-  const Y_onehot = oneHotEncode(Y);
-
+  const { oneHot, classes } = encodeLabels(Y);
 
   // Split into training and testing sets (80-20 split)
 
-  const { X_train, X_test, Y_train, Y_test } = trainTestSplit(X_norm, Y_onehot);
+  const { X_train, X_test, Y_train, Y_test } = trainTestSplit(X_norm, oneHot);
+
+  const inputSize = 2;                // (x, y)
+  const hiddenSize = parseInt(document.getElementById("hiddenSizeInput").value);
+  const outputSize = classes.length;  // = 2, since only 2 colors
 
   // Initialize and train the neural network
-  const nn = new NeuralNetwork(2, 10, colors.length, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
+  const nn = new NeuralNetwork(inputSize, hiddenSize, outputSize, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
+
+  // update UI with model info
+  updateModelInfo(nn);
   
   await nn.train(X_train, Y_train, 1000, (epoch, epochs, acc) => {
       const percent = Math.floor((epoch / epochs) * 100);
       progress.value = percent;
-      log.textContent = `Epoch ${epoch}/${epochs} - Accuracy: ${acc}%`;
   });
 
-  log.innerText += "\n✅ Training complete!";
+  log.innerText = "Training complete!";
 
   state.trainingAccuracy = nn.accuracy(X_train, Y_train).toFixed(2) + " %";
   state.testAccuracy = nn.accuracy(X_test, Y_test).toFixed(2) + " %";
@@ -87,3 +92,7 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   state.models.push({ model: nn, trainingAccuracy: state.trainingAccuracy, testAccuracy: state.testAccuracy });
 });
 
+
+function updateModelInfo(nn) {
+  document.getElementById("outputSize").textContent = nn.W2[0].length;
+}

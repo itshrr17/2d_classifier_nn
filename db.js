@@ -26,14 +26,15 @@ const state = new Proxy(initialState, {
     }
 });
 
-const colors = ['Blue', 'Red', 'Purple', 'Green', 'Yellow'];
+const colors = ['Red', 'Blue', 'Green', 'Purple', 'Orange', 'Yellow'];
 
 const colorMapping = {  
     "255,0,0": "Red",
     "0,0,255": "Blue",
     "0,128,0": "Green",
     "128,0,128": "Purple",
-    "255,165,0": "Orange"
+    "255,165,0": "Orange",
+    "255,255,0": "Yellow"
 }
 
 
