@@ -1,5 +1,5 @@
 
-import { state, colors, colorMapping } from './db.js';
+import { state } from './db.js';
 import { NeuralNetwork } from './model/model.js'
 
 // Convert Y to one-hot vectors
@@ -16,7 +16,7 @@ function encodeLabels(Y) {
   return { oneHot, classes: unique, map };
 }
 
-function trainTestSplit(X, Y, testRatio = 0.2) {
+function trainTestSplit(X, Y, testRatio = 0.25) {
     const N = X.length;
     const testSize = Math.floor(N * testRatio);
 
@@ -45,7 +45,6 @@ function trainTestSplit(X, Y, testRatio = 0.2) {
 
 const progress = document.getElementById("trainProgress");
 const log = document.getElementById("trainLog");
-const btn = document.getElementById("trainBtn");
 
 document.getElementById('trainBtn').addEventListener('click', async() => {
   let X = [], Y = [];
@@ -58,10 +57,10 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   // Normalize X coordinates (assuming canvas width & height)
   const X_norm = X.map(([x, y]) => [x / 600, y / 600]); // becasuse canvas size is 600 x 600
-  const { oneHot, classes } = encodeLabels(Y);
+  const encoded = encodeLabels(Y);
+  const { oneHot, classes } = encoded;
 
   // Split into training and testing sets (80-20 split)
-
   const { X_train, X_test, Y_train, Y_test } = trainTestSplit(X_norm, oneHot);
 
   const inputSize = 2;                // (x, y)
@@ -70,6 +69,7 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   // Initialize and train the neural network
   const nn = new NeuralNetwork(inputSize, hiddenSize, outputSize, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
+  nn.encodedData = encoded;
 
   // update UI with model info
   updateModelInfo(nn);

@@ -32,9 +32,8 @@ canvas.addEventListener("mouseout", () => state.painting = false);
 
 canvas.addEventListener("mousemove", (e) => {
     if (!state.painting) return;
-
+    
     let [x, y] = getPos(e);
-
     ctx.strokeStyle = state.brushColor;
     ctx.lineWidth = state.brushSize;
     ctx.lineCap = "round";   // smooth edges
@@ -55,33 +54,41 @@ function getPos(e) {
 }
 
 function sampleCanvas(ctx, numSamples) {
-    let samples = [];
-    let { width, height } = ctx.canvas;
+    const samples = [];
+    const { width, height } = ctx.canvas;
+    const imageData = ctx.getImageData(0, 0, width, height);
 
-    for (let i = 0; i < numSamples; i++) {
-        let x = Math.floor(Math.random() * width);
-        let y = Math.floor(Math.random() * height);
+    let i = 0;
 
-        let pixel = ctx.getImageData(x, y, 1, 1).data; // [r,g,b,a]
+    while(i < numSamples) {
+        // generate random (x, y)
+        const x = Math.floor(Math.random() * width);
+        const y = Math.floor(Math.random() * height);
 
-        // Ignore if transparent
-        if (pixel[3] === 0) continue;
+        const data = ctx.getImageData(x, y, 1, 1).data;
+        const r = data[0], g = data[1], b = data[2];
 
-        let color = "black";
-        let colorCode = `${pixel[0]},${pixel[1]},${pixel[2]}`;
+        const color = `${r},${g},${b}`;
 
-        // Save sample data
-        samples.push({
-            x: x / width,   // normalize to [0,1] for NN
-            y: y / height,  // normalize to [0,1] for NN
-            label: colorMapping[colorCode],
-        });
+
+        // ignore unknown colors
+        if(colorMapping[color] === undefined) continue;
+        
+        const point = { 
+            x: x / width,
+            y: y / height,
+            label: colorMapping[color]
+        }
+
+        samples.push(point);
+
 
         // Draw a small dot at sampled location
-        ctx.fillStyle = color;
+        ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2); // radius 4px for sample point
+        ctx.arc(x, y, 3, 0, Math.PI * 2); // radius 4px for sample point
         ctx.fill();
+        i++;
     }
 
     return samples;
@@ -92,6 +99,7 @@ document.getElementById("populate").addEventListener("click", () => {
     const samples = sampleCanvas(ctx, numSamples);
     state.samplePoints = state.samplePoints.concat(...samples);
     console.log(`Sampled ${samples.length} points. Total samples: ${state.samplePoints.length}`);
+    console.log(state.samplePoints);
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
@@ -99,6 +107,30 @@ document.getElementById("clearBtn").addEventListener("click", () => {
     state.hasPainted = false;
     state.samplePoints = [];
     console.log("Canvas cleared.");
+});
+
+document.getElementById("predictionMode").addEventListener("click", () => {
+    state.predictionMode = !state.predictionMode;
+    const ele = document.getElementById("predictionMode");
+    ele.innerText = state.predictionMode ? "Prediction: ON" : "Prediction: OFF";
+});
+
+// Given the encodeLabels output, get color by predicted class index
+function getColorFromPrediction(predIndex, encodeResult) {
+  return encodeResult.classes[predIndex];
+}
+
+canvas.addEventListener("mousemove", (e) => {
+    if (!state.predictionMode) return;
+
+    let [x, y] = getPos(e);
+    
+    const nn = state.currentModel;
+
+    const pred = nn.predictWithConfidence([x, y])[0];
+    const label = getColorFromPrediction(pred.class, nn.encodedData);
+    console.log(x, y, label, pred.confidence);
+
 });
 
 function makeInputScrollable(input) {

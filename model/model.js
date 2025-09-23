@@ -5,6 +5,7 @@ export class NeuralNetwork {
     this.W2 = math.random([hiddenSize, outputSize], -0.5, 0.5);
     this.b2 = math.zeros([1, outputSize]);
     this.lr = lr;
+    this.encodedData = null;
   }
 
   // ReLU and derivative

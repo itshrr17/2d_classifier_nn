@@ -7,7 +7,8 @@ let initialState = {
     models: [],
     currentModel: null,
     trainingAccuracy: 0,
-    testAccuracy: 0
+    testAccuracy: 0,
+    predictionMode: false,
 }
 
 const reactive = {
@@ -34,7 +35,8 @@ const colorMapping = {
     "0,128,0": "Green",
     "128,0,128": "Purple",
     "255,165,0": "Orange",
-    "255,255,0": "Yellow"
+    "255,255,0": "Yellow",
+    "255,255,255": "Unlabled"  // white or transparent → unlabled
 }
 
 
