@@ -1,6 +1,7 @@
 
 import { state } from './db.js';
 import { NeuralNetwork } from './model/model.js'
+import { drawDecisionBoundary } from './draw.js';
 
 // Convert Y to one-hot vectors
 function encodeLabels(Y) {
@@ -58,6 +59,7 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   // Normalize X coordinates (assuming canvas width & height)
   const X_norm = X.map(([x, y]) => [x / 600, y / 600]); // becasuse canvas size is 600 x 600
   const encoded = encodeLabels(Y);
+
   const { oneHot, classes } = encoded;
 
   // Split into training and testing sets (80-20 split)
@@ -65,7 +67,7 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   const inputSize = 2;                // (x, y)
   const hiddenSize = parseInt(document.getElementById("hiddenSizeInput").value);
-  const outputSize = classes.length;  // = 2, since only 2 colors
+  const outputSize = classes.length;  //
 
   // Initialize and train the neural network
   const nn = new NeuralNetwork(inputSize, hiddenSize, outputSize, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
@@ -90,9 +92,12 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   state.currentModel = nn;
   state.models.push({ model: nn, trainingAccuracy: state.trainingAccuracy, testAccuracy: state.testAccuracy });
+
+  drawDecisionBoundary(nn, encoded);
 });
 
 
 function updateModelInfo(nn) {
   document.getElementById("outputSize").textContent = nn.W2[0].length;
+  document.getElementById("classesCount").textContent = nn.encodedData.classes.toString();
 }

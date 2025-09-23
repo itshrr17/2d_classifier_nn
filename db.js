@@ -30,13 +30,13 @@ const state = new Proxy(initialState, {
 const colors = ['Red', 'Blue', 'Green', 'Purple', 'Orange', 'Yellow'];
 
 const colorMapping = {  
-    "255,0,0": "Red",
-    "0,0,255": "Blue",
-    "0,128,0": "Green",
-    "128,0,128": "Purple",
-    "255,165,0": "Orange",
-    "255,255,0": "Yellow",
-    "255,255,255": "Unlabled"  // white or transparent → unlabled
+    "255,0,0,255": "Red",
+    "0,0,255,255": "Blue",
+    "0,128,0,255": "Green",
+    "128,0,128,255": "Purple",
+    "255,165,0,255": "Orange",
+    "255,255,0,255": "Yellow",
+    "0,0,0,0": "Unlabled"  // white or transparent → unlabled
 }
 
 

@@ -56,7 +56,6 @@ function getPos(e) {
 function sampleCanvas(ctx, numSamples) {
     const samples = [];
     const { width, height } = ctx.canvas;
-    const imageData = ctx.getImageData(0, 0, width, height);
 
     let i = 0;
 
@@ -66,10 +65,9 @@ function sampleCanvas(ctx, numSamples) {
         const y = Math.floor(Math.random() * height);
 
         const data = ctx.getImageData(x, y, 1, 1).data;
-        const r = data[0], g = data[1], b = data[2];
+        const r = data[0], g = data[1], b = data[2], a = data[3];
 
-        const color = `${r},${g},${b}`;
-
+        const color = `${r},${g},${b},${a}`;
 
         // ignore unknown colors
         if(colorMapping[color] === undefined) continue;
@@ -92,6 +90,35 @@ function sampleCanvas(ctx, numSamples) {
     }
 
     return samples;
+}
+
+export function drawDecisionBoundary(nn, encodeResult) {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const imgData = ctx.createImageData(canvas.width, canvas.height);
+
+    for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+            // Normalize coordinates as used in training
+            const input = [[x / canvas.width, y / canvas.height]];
+            const predIdx = nn.predict(input)[0];
+
+            // Get color for this class (use encodeResult.classes and colorMapping)
+            const classLabel = encodeResult.classes[predIdx];
+            // Find the RGB string for this class
+            const rgbStr = Object.keys(colorMapping).find(
+                key => colorMapping[key] === classLabel
+            ) || "255,255,255";
+            const [r, g, b] = rgbStr.split(',').map(Number);
+
+            const idx = (y * canvas.width + x) * 4;
+            imgData.data[idx] = r;
+            imgData.data[idx + 1] = g;
+            imgData.data[idx + 2] = b;
+            imgData.data[idx + 3] = 60; // alpha for transparency
+        }
+    }
+    ctx.putImageData(imgData, 0, 0);
 }
 
 document.getElementById("populate").addEventListener("click", () => {
@@ -130,7 +157,6 @@ canvas.addEventListener("mousemove", (e) => {
     const pred = nn.predictWithConfidence([x, y])[0];
     const label = getColorFromPrediction(pred.class, nn.encodedData);
     console.log(x, y, label, pred.confidence);
-
 });
 
 function makeInputScrollable(input) {
