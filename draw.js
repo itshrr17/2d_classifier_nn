@@ -165,6 +165,8 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 });
 
 document.getElementById("predictionMode").addEventListener("click", () => {
+    if(state.currentModel === null) return;
+
     state.predictionMode = !state.predictionMode;
     const ele = document.getElementById("predictionMode");
     ele.innerText = state.predictionMode ? "Prediction: ON" : "Prediction: OFF";
@@ -175,16 +177,41 @@ function getColorFromPrediction(predIndex, encodeResult) {
   return encodeResult.classes[predIndex];
 }
 
+
+// Floating prediction label element
+let predLabelDiv = document.getElementById('predictionLabelDiv');
+if (!predLabelDiv) {
+    predLabelDiv = document.createElement('div');
+    predLabelDiv.id = 'predictionLabelDiv';
+    predLabelDiv.style.display = 'none';
+    document.body.appendChild(predLabelDiv);
+}
+
 canvas.addEventListener("mousemove", (e) => {
-    if (!state.predictionMode) return;
+    if (!state.predictionMode) {
+        predLabelDiv.style.display = 'none';
+        return;
+    }
 
     let [x, y] = getPos(e);
-    
     const nn = state.currentModel;
-
     const pred = nn.predictWithConfidence([[x / 600, y / 600]])[0];
     const label = getColorFromPrediction(pred.class, nn.encodedData);
-    console.log(x, y, label, pred.confidence);
+
+    // Find color for label
+    const rgbStr = Object.keys(colorMapping).find(key => colorMapping[key] === label) || "255,255,255";
+    const [r, g, b] = rgbStr.split(',').map(Number);
+
+    predLabelDiv.textContent = `${label} (${pred.confidence}%)`;
+    predLabelDiv.style.background = `rgba(${r},${g},${b},0.85)`;
+    predLabelDiv.style.color = (r*0.299 + g*0.587 + b*0.114 > 186) ? '#222' : '#fff';
+    predLabelDiv.style.left = (e.clientX + 16) + 'px';
+    predLabelDiv.style.top = (e.clientY + 8) + 'px';
+    predLabelDiv.style.display = 'block';
+});
+
+canvas.addEventListener("mouseleave", () => {
+    predLabelDiv.style.display = 'none';
 });
 
 function makeInputScrollable(input) {

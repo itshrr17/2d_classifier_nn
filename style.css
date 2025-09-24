@@ -93,3 +93,17 @@ ul {
   overflow-y: auto;
   scroll-behavior: smooth;
 }
+
+/* Floating prediction label for prediction mode */
+#predictionLabelDiv {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: none;
+  transition: background 0.1s, color 0.1s;
+}
