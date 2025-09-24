@@ -131,3 +131,25 @@ renderHiddenLayers();
 function getColorFromPrediction(predIndex, encodeResult) {
   return encodeResult.classes[predIndex];
 }
+
+function makeInputScrollable(input) {
+  input.addEventListener("wheel", e => {
+    e.preventDefault(); // prevent page scroll
+
+    let step = parseFloat(input.step) || 1;
+    let decimals = (step.toString().split(".")[1] || "").length; // number of decimals
+    let min = parseFloat(input.min) || 0;
+    let max = parseFloat(input.max) || 100;
+    let value = parseFloat(input.value) || min;
+
+    if (e.deltaY < 0) value += step; // scroll up → increase
+    else value -= step;               // scroll down → decrease
+
+    value = Math.min(Math.max(value, min), max); // clamp
+    input.value = value.toFixed(decimals);       // format to step decimals
+  });
+}
+
+makeInputScrollable(document.getElementById("learningRateInput"));
+makeInputScrollable(document.getElementById("epoch"));
+makeInputScrollable(document.getElementById("blockSize"));
