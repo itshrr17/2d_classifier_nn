@@ -128,7 +128,7 @@ document.getElementById("populate").addEventListener("click", () => {
 
     const labels = {};
     state.samplePoints.forEach(p => labels[p.label]++ || (labels[p.label] = 1));
-    const text = Object.entries(labels).map(([k,v]) => `${k}: ${(v / state.samplePoints.length).toFixed(2) * 100}%`).join(', ');
+    const text = Object.entries(labels).map(([k,v]) => `${k}: ${(v / state.samplePoints.length * 100).toFixed(2)}%`).join(', ');
     document.getElementById("classesCount").textContent = text || 'No data';
 
     console.log("Class distribution:", labels);
