@@ -125,6 +125,14 @@ document.getElementById("populate").addEventListener("click", () => {
     const numSamples = 100; // Number of points to sample
     const samples = sampleCanvas(ctx, numSamples);
     state.samplePoints = state.samplePoints.concat(...samples);
+
+    const labels = {};
+    state.samplePoints.forEach(p => labels[p.label]++ || (labels[p.label] = 1));
+    const text = Object.entries(labels).map(([k,v]) => `${k}: ${(v / state.samplePoints.length).toFixed(2) * 100}%`).join(', ');
+    document.getElementById("classesCount").textContent = text || 'No data';
+
+    console.log("Class distribution:", labels);
+
     console.log(`Sampled ${samples.length} points. Total samples: ${state.samplePoints.length}`);
     console.log(state.samplePoints);
 });
@@ -177,6 +185,5 @@ function makeInputScrollable(input) {
   });
 }
 
-
-makeInputScrollable(document.getElementById("hiddenSizeInput"));
 makeInputScrollable(document.getElementById("learningRateInput"));
+makeInputScrollable(document.getElementById("epoch"));

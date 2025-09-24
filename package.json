@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "mathjs": "^14.7.0"
+  }
+}

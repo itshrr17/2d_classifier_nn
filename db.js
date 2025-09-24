@@ -9,6 +9,8 @@ let initialState = {
     trainingAccuracy: 0,
     testAccuracy: 0,
     predictionMode: false,
+    hiddenLayers: [16], // default hidden layers
+    outputSize: 0,   // default classes
 }
 
 const reactive = {
@@ -41,3 +43,5 @@ const colorMapping = {
 
 
 export { state, colors, colorMapping };
+
+window.state = state; // for debugging

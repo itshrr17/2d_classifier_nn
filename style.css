@@ -1,10 +1,15 @@
+html {
+  height: 100%;
+  width: 100%;
+}
+  
 body {
   margin: 0;
   background: #242424;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100%;
   color: #f0f0f0; 
   font-family: 'Courier New', Courier, monospace;
 }
@@ -12,7 +17,6 @@ body {
 canvas {
   border: 2px solid white;
   background: #f0f0f0;
-  cursor:rgb(122, 122, 122)sshair;
 }
 
 #toolbar { position: absolute;
@@ -30,7 +34,6 @@ button {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding: 0.5em;
 }
 
 .flex-col {
@@ -60,4 +63,27 @@ input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio"
     border: transparent;
     font-family: 'Courier New', Courier, monospace;
     font-size: inherit;
+    border-bottom: #c2c2c2 1px solid;
+}
+
+space {
+  content: "";
+  margin: 0;
+  display: block;
+  line-height: 1.4em;
+}
+
+ul {
+  margin: 0.5em;
+}
+
+#addLayerBtn {
+  cursor: pointer;
+}
+
+#hiddenLayersList {
+  display: block;
+  max-height: 150px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }

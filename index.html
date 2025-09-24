@@ -13,41 +13,49 @@
     <button id="clearBtn">Clear</button>
     <button id="populate">Populate</button>
     <button id="trainBtn">Train</button>
+    <span>Epoch: <input id="epoch" value="1000" step="100" max="100000" min="100" style="width: 80px;"/></span>
     <button id="predictionMode">Prediction: OFF</button>
   </div>
-  <div class="flex">
-    <div class="flex-col">
+  <div class="flex" style="width: 100%;"> 
+    <div class="flex-col" style="width: 25%;">
       <div>Brush Color: <span id="brushColor">None</span></div>
       <div>Brush Size: <span id="brushSize">100</span></div>
       <div>Sample Points: <span id="samplePoints">0</span></div>
-      <br />
+      <space />
       
       <div>
         <progress id="trainProgress" max="100" value="0"></progress>
         <span id="trainLog"></span>
       </div>
 
-      <br />
+      <space />
       <h4>Model Accuracy -</h4>
       <div> Training: <span id="trainingAccuracy"></span></div>
       <div> Testing: <span id="testAccuracy"></span></div>
 
-      <br />
+      <space />
       <h4>Neural Network Info</h4>
-      <div>Input size: 2 (coords: x, y)</div>
-      <div>
-        Hidden size:
-        <input type="number" id="hiddenSizeInput" value="10" min="1" max="50" step="1" style="width:50px;">
-      </div>
-      <div>Output size: <span id="outputSize">0</span></div>
       <div>
         Learning rate:
-        <input type="number" id="learningRateInput" value="0.1" min="0.001" max="1" step="0.01" style="width:50px;">
+        <input type="number" id="learningRateInput" value="0.05" min="0.001" max="1" step="0.01" style="width:60px;">
       </div>
       <div>Classes: <span id="classesCount">No data</span></div>
+      <space />
+      <h4>Layers:</h4>
+      <div>
+        <b>Input (2 x 1)</b>
+      </div>
+      <b>Hidden Layers:</b><span id="addLayerBtn" type="button">( + )</span>
+      <div id="hiddenLayersList"></div>
+      <div>
+        <b>Output Layer: </b><space />
+        Softmax (<span id="outputPrevSize">0</span> x <span id="outputSize">0</span>) 
+      </div>
     </div>
+    <div class="flex-col" style="width: 50%;">
     <canvas id="canvas" width="600" height="600"></canvas>
-    <div class="flex-col"></div>
+    </div>
+    <div class="flex-col" style="width: 25%;"></div>
   </div>
   <script type="module" src="draw.js"></script>
   <script type="module" src="index.js" defer></script>

@@ -2,20 +2,7 @@
 import { state } from './db.js';
 import { NeuralNetwork } from './model/model.js'
 import { drawDecisionBoundary } from './draw.js';
-
-// Convert Y to one-hot vectors
-function encodeLabels(Y) {
-  const unique = [...new Set(Y)];
-  const map = Object.fromEntries(unique.map((c, i) => [c, i]));
-
-  const oneHot = Y.map(label => {
-    const arr = new Array(unique.length).fill(0);
-    arr[map[label]] = 1;
-    return arr;
-  });
-
-  return { oneHot, classes: unique, map };
-}
+import { encodeLabels } from './utils.js';
 
 function trainTestSplit(X, Y, testRatio = 0.25) {
     const N = X.length;
@@ -66,17 +53,18 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   const { X_train, X_test, Y_train, Y_test } = trainTestSplit(X_norm, oneHot);
 
   const inputSize = 2;                // (x, y)
-  const hiddenSize = parseInt(document.getElementById("hiddenSizeInput").value);
   const outputSize = classes.length;  //
 
   // Initialize and train the neural network
-  const nn = new NeuralNetwork(inputSize, hiddenSize, outputSize, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
+  const nn = new NeuralNetwork(inputSize, state.hiddenLayers, outputSize, 0.1); // 2 inputs, 10 hidden neurons, 5 classes
   nn.encodedData = encoded;
 
   // update UI with model info
   updateModelInfo(nn);
+
+  const epoch = parseInt(document.getElementById("epoch").value) || 100;
   
-  await nn.train(X_train, Y_train, 1000, (epoch, epochs, acc) => {
+  await nn.train(X_train, Y_train, epoch, (epoch, epochs, acc) => {
       const percent = Math.floor((epoch / epochs) * 100);
       progress.value = percent;
   });
@@ -93,11 +81,84 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   state.currentModel = nn;
   state.models.push({ model: nn, trainingAccuracy: state.trainingAccuracy, testAccuracy: state.testAccuracy });
 
-  drawDecisionBoundary(nn, encoded);
+  // drawDecisionBoundary(nn, encoded);
 });
 
 
 function updateModelInfo(nn) {
-  document.getElementById("outputSize").textContent = nn.W2[0].length;
-  document.getElementById("classesCount").textContent = nn.encodedData.classes.toString();
+  document.getElementById("outputSize").textContent = nn.encodedData.classes.length;
 }
+
+function renderHiddenLayers() {
+  const list = document.getElementById('hiddenLayersList');
+  list.innerHTML = '';
+  let prevSize = 2; // input size (x, y)
+  state.hiddenLayers.forEach((size, idx) => {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = size;
+    input.min = 1;
+    input.style.width = '60px';
+    input.style.marginLeft = '10px';
+    input.onchange = (e) => {
+      state.hiddenLayers[idx] = parseInt(e.target.value) || 1;
+      renderHiddenLayers(); // re-render to update sizes
+    };
+
+    const removeBtn = document.createElement('span');
+    removeBtn.textContent = '( x )';
+    removeBtn.style.cursor = 'pointer';
+    removeBtn.style.marginLeft = '10px';
+    removeBtn.onclick = () => {
+      state.hiddenLayers.splice(idx, 1);
+      renderHiddenLayers();
+    };
+
+    div.appendChild(document.createTextNode(`ReLU: `));
+    div.appendChild(input);
+    if (state.hiddenLayers.length > 1) div.appendChild(removeBtn);
+
+    // Layer size info
+    const sizeInfo = document.createElement('div');
+    sizeInfo.style.fontSize = '0.8em';
+    sizeInfo.style.textAlign = 'right';
+    sizeInfo.style.color = '#aaa';
+    sizeInfo.style.margin = '2px 0 8px 10px';
+    sizeInfo.textContent = `(${prevSize} × ${size})`;
+    prevSize = size;
+
+    // Wrapper for input and size info
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(div);
+    wrapper.appendChild(sizeInfo);
+
+    list.appendChild(wrapper);
+  });
+
+  // Output layer size info
+  // Try to get output size from current model, else fallback to 3
+  let outputSize = state.outputSize;;
+  if (state.currentModel && state.currentModel.W) {
+    outputSize = state.currentModel.W[state.currentModel.W.length - 1][0].length;
+  } else if (state.samplePoints && state.samplePoints.length > 0) {
+    // Estimate from unique labels
+    const labels = [...new Set(state.samplePoints.filter(p => p.label).map(p => p.label))];
+    outputSize = labels.length;
+  }
+
+  document.getElementById('outputPrevSize').innerText = prevSize;
+  document.getElementById('outputSize').innerText = outputSize;
+}
+document.getElementById('addLayerBtn').onclick = () => {
+  if(state.hiddenLayers.length >= 5) return; // max 5 hidden layers
+  state.hiddenLayers.push(10); // default size
+  state.hiddenLayers = state.hiddenLayers.map(n => n);
+  renderHiddenLayers();
+  document.getElementById('hiddenLayersList').scrollTop = document.getElementById('hiddenLayersList').scrollHeight;
+};
+
+renderHiddenLayers();
