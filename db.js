@@ -9,7 +9,7 @@ let initialState = {
     trainingAccuracy: 0,
     testAccuracy: 0,
     predictionMode: false,
-    hiddenLayers: [32, 16], // default hidden layers
+    hiddenLayers: [64, 64, 64, 64], // default hidden layers
     outputSize: 0,   // default classes
 }
 
