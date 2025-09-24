@@ -12,8 +12,9 @@ export class NeuralNetwork {
     this.W = [];
     this.b = [];
     for (let i = 0; i < this.sizes.length - 1; i++) {
-      this.W.push(math.random([this.sizes[i], this.sizes[i+1]], -0.5, 0.5));
-      this.b.push(math.zeros([1, this.sizes[i+1]]));
+      let std = Math.sqrt(2 / this.sizes[i]); // initialization for ReLU
+      this.W.push(math.multiply(math.random([this.sizes[i], this.sizes[i+1]], -1, 1), std));
+      this.b.push(math.random([1, this.sizes[i+1]], -0.01, 0.01)); // small random bias
     }
   }
 
@@ -35,6 +36,16 @@ export class NeuralNetwork {
       const sum = exps.reduce((a,b)=>a+b,0);
       return exps.map(v => v / sum);
     });
+  }
+
+  crossEntropyLoss(yTrue, yPred) {
+    // yTrue and yPred are arrays of [batch, numClasses]
+    const eps = 1e-12; // avoid log(0)
+    return -math.mean(
+      yTrue.map((row, i) =>
+        row.reduce((sum, val, j) => sum + val * Math.log(yPred[i][j] + eps), 0)
+      )
+    );
   }
 
 
@@ -83,19 +94,34 @@ export class NeuralNetwork {
     }
   }
 
+  // async train(X, y, epochs = 1000, onProgress = null) {
+  //   for (let epoch = 0; epoch < epochs; epoch++) {
+  //       this.forward(X);
+  //       this.backward(X, y);
+
+  //       // call onProgress every few epochs OR on the last epoch
+  //       if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
+  //           const acc = this.accuracy(X, y).toFixed(2);
+  //           onProgress(epoch + 1, epochs, acc); // note: epoch+1 for 1-based
+  //           await new Promise(resolve => setTimeout(resolve, 0)); // allow UI update
+  //       }
+  //   }
+  // }
+
   async train(X, y, epochs = 1000, onProgress = null) {
     for (let epoch = 0; epoch < epochs; epoch++) {
-        this.forward(X);
-        this.backward(X, y);
+      const yPred = this.forward(X);
+      this.backward(X, y);
 
-        // call onProgress every few epochs OR on the last epoch
-        if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
-            const acc = this.accuracy(X, y).toFixed(2);
-            onProgress(epoch + 1, epochs, acc); // note: epoch+1 for 1-based
-            await new Promise(resolve => setTimeout(resolve, 0)); // allow UI update
-        }
+      if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
+        const acc = this.accuracy(X, y).toFixed(2);
+        const loss = this.crossEntropyLoss(y, yPred).toFixed(4);
+        onProgress(epoch + 1, epochs, acc, loss);
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
     }
-}
+  }
+
 
   predict(X) {
     const probs = this.forward(X);

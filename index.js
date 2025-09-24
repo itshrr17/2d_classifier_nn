@@ -63,10 +63,15 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   updateModelInfo(nn);
 
   const epoch = parseInt(document.getElementById("epoch").value) || 100;
+  const accuracyEle = document.getElementById('acc')
+  const lossEle = document.getElementById('loss')
   
-  await nn.train(X_train, Y_train, epoch, (epoch, epochs, acc) => {
+  await nn.train(X_train, Y_train, epoch, (epoch, epochs, acc, loss) => {
       const percent = Math.floor((epoch / epochs) * 100);
       progress.value = percent;
+      console.log(`Epoch ${epoch}/${epochs} - Acc: ${acc}% - Loss: ${loss}`);
+      accuracyEle.innerText = acc + " %";
+      lossEle.innerText = loss;
   });
 
   log.innerText = "Training complete!";
