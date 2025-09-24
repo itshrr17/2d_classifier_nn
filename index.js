@@ -93,7 +93,7 @@ function hideDecisionBoundary() {
 
 let isDrawing = false;
 
-async function drawDecisionBoundary(nn, encodeResult, blockSize = state.blockSize) {
+async function drawDecisionBoundary(nn, encodeResult, blockSize = 4) {
     if (isDrawing) return;
     isDrawing = true;
 
@@ -122,7 +122,6 @@ async function drawDecisionBoundary(nn, encodeResult, blockSize = state.blockSiz
             if (y % 32 === 0) await new Promise(r => setTimeout(r, 0));
         }
     } finally {
-        // ✅ always reset lock even if error occurs
         isDrawing = false;
     }
 }
@@ -135,7 +134,8 @@ document.getElementById('decisionBoundaryBtn').addEventListener('click', () => {
   boundaryVisible = !boundaryVisible;
 
   if (boundaryVisible) {
-    drawDecisionBoundary(state.currentModel, state.currentModel.encodedData);
+    const blockSize = parseInt(document.getElementById('blockSize').value)
+    drawDecisionBoundary(state.currentModel, state.currentModel.encodedData, blockSize);
     document.getElementById('decisionBoundaryBtn').innerText = 'Hide Decision Boundary';
   } else {
     hideDecisionBoundary();
@@ -207,6 +207,7 @@ function renderHiddenLayers() {
   document.getElementById('outputPrevSize').innerText = prevSize;
   document.getElementById('outputSize').innerText = outputSize;
 }
+
 document.getElementById('addLayerBtn').onclick = () => {
   if(state.hiddenLayers.length >= 5) return; // max 5 hidden layers
   state.hiddenLayers.push(10); // default size

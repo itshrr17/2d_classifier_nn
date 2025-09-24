@@ -201,3 +201,5 @@ function makeInputScrollable(input) {
 
 makeInputScrollable(document.getElementById("learningRateInput"));
 makeInputScrollable(document.getElementById("epoch"));
+makeInputScrollable(document.getElementById("blockSize"));
+
