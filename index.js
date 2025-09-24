@@ -1,7 +1,7 @@
 
 import { state } from './db.js';
-import { NeuralNetwork } from './model/model.js'
-import { drawDecisionBoundary } from './draw.js';
+import { NeuralNetwork } from './model/best.js'
+import { drawDecisionBoundary, hideDecisionBoundary } from './draw.js';
 import { encodeLabels } from './utils.js';
 
 function trainTestSplit(X, Y, testRatio = 0.25) {
@@ -43,8 +43,7 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
     Y.push(p.label);
   });
 
-  // Normalize X coordinates (assuming canvas width & height)
-  const X_norm = X.map(([x, y]) => [x / 600, y / 600]); // becasuse canvas size is 600 x 600
+  const X_norm = X;
   const encoded = encodeLabels(Y);
 
   const { oneHot, classes } = encoded;
@@ -85,8 +84,24 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
 
   state.currentModel = nn;
   state.models.push({ model: nn, trainingAccuracy: state.trainingAccuracy, testAccuracy: state.testAccuracy });
+});
 
-  // drawDecisionBoundary(nn, encoded);
+
+// Toggle decision boundary overlay
+let boundaryVisible = false;
+document.getElementById('decisionBoundaryBtn').addEventListener('click', () => {
+  if (!state.currentModel || !state.currentModel.encodedData) {
+    alert('Train the model first!');
+    return;
+  }
+  boundaryVisible = !boundaryVisible;
+  if (boundaryVisible) {
+    drawDecisionBoundary(state.currentModel, state.currentModel.encodedData);
+    document.getElementById('decisionBoundaryBtn').innerText = 'Hide Decision Boundary';
+  } else {
+    hideDecisionBoundary();
+    document.getElementById('decisionBoundaryBtn').innerText = 'Show Decision Boundary';
+  }
 });
 
 

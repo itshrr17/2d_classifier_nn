@@ -1,45 +1,35 @@
 export class NeuralNetwork {
- constructor(inputSize, hiddenSizes, outputSize, lr=0.1) {
-    // hiddenSizes: array of sizes, e.g. [16, 32]
+  constructor(inputSize, hiddenSizes = [64, 64, 64, 64], outputSize, lr=0.01, dropout=0.0) {
     this.lr = lr;
+    this.dropout = dropout;
     this.encodedData = null;
-
-    // Layer sizes: [input, ...hidden, output]
     this.sizes = [inputSize, ...hiddenSizes, outputSize];
-
-    // Initialize weights and biases for each layer
     this.W = [];
     this.b = [];
     for (let i = 0; i < this.sizes.length - 1; i++) {
-      let std = Math.sqrt(2 / this.sizes[i]); // initialization for ReLU
+      // He initialization for ReLU
+      let std = Math.sqrt(2 / this.sizes[i]);
       this.W.push(math.multiply(math.random([this.sizes[i], this.sizes[i+1]], -1, 1), std));
-      this.b.push(math.random([1, this.sizes[i+1]], -0.01, 0.01)); // small random bias
+      this.b.push(math.random([1, this.sizes[i+1]], -0.01, 0.01));
     }
   }
 
-  // ReLU and derivative
   relu(x) {
-    // x is [m, hiddenSize]
     return x.map(row => row.map(v => Math.max(0, v)));
   }
-
   reluDeriv(x) {
     return x.map(row => row.map(v => v > 0 ? 1 : 0));
   }
-
-  // Softmax for batch
   softmax(z) {
     return z.map(row => {
       const max = Math.max(...row);
-      const exps = row.map(v => Math.exp(v - max)); // numerical stability
+      const exps = row.map(v => Math.exp(v - max));
       const sum = exps.reduce((a,b)=>a+b,0);
       return exps.map(v => v / sum);
     });
   }
-
   crossEntropyLoss(yTrue, yPred) {
-    // yTrue and yPred are arrays of [batch, numClasses]
-    const eps = 1e-12; // avoid log(0)
+    const eps = 1e-12;
     return -math.mean(
       yTrue.map((row, i) =>
         row.reduce((sum, val, j) => sum + val * Math.log(yPred[i][j] + eps), 0)
@@ -47,18 +37,33 @@ export class NeuralNetwork {
     );
   }
 
+  // Dropout mask generator
+  dropoutMask(shape, rate) {
+    return Array.from({length: shape[0]}, () =>
+      Array.from({length: shape[1]}, () => (Math.random() > rate ? 1 : 0))
+    );
+  }
 
-  forward(X) {
+  forward(X, training=false) {
     this.z = [];
     this.a = [X];
-    // Forward through all hidden layers
+    this.masks = [];
     for (let i = 0; i < this.W.length - 1; i++) {
-      const z = math.add(math.multiply(this.a[i], this.W[i]), this.b[i]);
+      let z = math.add(math.multiply(this.a[i], this.W[i]), this.b[i]);
       this.z.push(z);
-      this.a.push(this.relu(z));
+      let a = this.relu(z);
+      // Apply dropout during training
+      if (this.dropout > 0 && training) {
+        let mask = this.dropoutMask([a.length, a[0].length], this.dropout);
+        this.masks.push(mask);
+        a = math.dotMultiply(a, mask);
+      } else {
+        this.masks.push(null);
+      }
+      this.a.push(a);
     }
     // Output layer
-    const z = math.add(math.multiply(this.a[this.a.length - 1], this.W[this.W.length - 1]), this.b[this.b.length - 1]);
+    let z = math.add(math.multiply(this.a[this.a.length - 1], this.W[this.W.length - 1]), this.b[this.b.length - 1]);
     this.z.push(z);
     this.a.push(this.softmax(z));
     return this.a[this.a.length - 1];
@@ -71,47 +76,29 @@ export class NeuralNetwork {
     let dW = [];
     let db = [];
 
-    // Output layer gradient
-    dz[L] = math.subtract(this.a[L], y); // [m, outputSize]
-
-    // Backpropagate through layers
+    dz[L] = math.subtract(this.a[L], y);
     for (let l = L - 1; l >= 0; l--) {
       dW[l] = math.multiply(math.transpose(this.a[l]), dz[l+1]).map(row => row.map(v => v / m));
-      // db[l] = math.mean(dz[l+1], 0);
       db[l] = [math.mean(dz[l+1], 0)];
-
       if (l > 0) {
-        const da = math.multiply(dz[l+1], math.transpose(this.W[l]));
+        let da = math.multiply(dz[l+1], math.transpose(this.W[l]));
+        // Apply dropout mask in backward pass
+        if (this.dropout > 0 && this.masks[l-1]) {
+          da = math.dotMultiply(da, this.masks[l-1]);
+        }
         dz[l] = math.dotMultiply(da, this.reluDeriv(this.z[l-1]));
       }
     }
-
-    // Update weights and biases
     for (let l = 0; l < L; l++) {
       this.W[l] = math.subtract(this.W[l], math.multiply(this.lr, dW[l]));
       this.b[l] = math.subtract(this.b[l], math.multiply(this.lr, db[l]));
     }
   }
 
-  // async train(X, y, epochs = 1000, onProgress = null) {
-  //   for (let epoch = 0; epoch < epochs; epoch++) {
-  //       this.forward(X);
-  //       this.backward(X, y);
-
-  //       // call onProgress every few epochs OR on the last epoch
-  //       if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
-  //           const acc = this.accuracy(X, y).toFixed(2);
-  //           onProgress(epoch + 1, epochs, acc); // note: epoch+1 for 1-based
-  //           await new Promise(resolve => setTimeout(resolve, 0)); // allow UI update
-  //       }
-  //   }
-  // }
-
-  async train(X, y, epochs = 1000, onProgress = null) {
+  async train(X, y, epochs = 2000, onProgress = null) {
     for (let epoch = 0; epoch < epochs; epoch++) {
-      const yPred = this.forward(X);
+      const yPred = this.forward(X, true);
       this.backward(X, y);
-
       if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
         const acc = this.accuracy(X, y).toFixed(2);
         const loss = this.crossEntropyLoss(y, yPred).toFixed(4);
@@ -121,29 +108,26 @@ export class NeuralNetwork {
     }
   }
 
-
   predict(X) {
-    const probs = this.forward(X);
+    const probs = this.forward(X, false);
     return probs.map(row => row.indexOf(Math.max(...row)));
   }
-
   predictWithConfidence(X) {
-    const probs = this.forward(X);
+    const probs = this.forward(X, false);
     return probs.map(row => {
       const maxProb = Math.max(...row);
       return {
         class: row.indexOf(maxProb),
-        confidence: (maxProb * 100).toFixed(2) // %
+        confidence: (maxProb * 100).toFixed(2)
       };
     });
   }
-
   accuracy(X, yTrue) {
-    const probs = this.forward(X);
+    const probs = this.forward(X, false);
     let correct = 0;
     for (let i = 0; i < X.length; i++) {
       const pred = probs[i].indexOf(Math.max(...probs[i]));
-      const trueLabel = yTrue[i].indexOf(1); // one-hot
+      const trueLabel = yTrue[i].indexOf(1);
       if (pred === trueLabel) correct++;
     }
     return (correct / X.length) * 100;

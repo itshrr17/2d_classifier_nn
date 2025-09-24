@@ -15,6 +15,7 @@
     <button id="trainBtn">Train</button>
     <span>Epoch: <input id="epoch" value="100" step="100" max="100000" min="100" style="width: 80px;"/></span>
     <button id="predictionMode">Prediction: OFF</button>
+    <button id="decisionBoundaryBtn">Decision Boundary: OFF</button>
   </div>
   <div class="flex" style="width: 100%;"> 
     <div class="flex-col" style="width: 25%;">
@@ -41,7 +42,7 @@
       <h4>Neural Network Info</h4>
       <div>
         Learning rate:
-        <input type="number" id="learningRateInput" value="0.05" min="0.001" max="1" step="0.01" style="width:60px;">
+        <input type="number" id="learningRateInput" value="0.1" min="0.001" max="1" step="0.01" style="width:60px;">
       </div>
       <div>Classes: <span id="classesCount">No data</span></div>
       <space />
@@ -58,6 +59,7 @@
     </div>
     <div class="flex-col" style="width: 50%;">
     <canvas id="canvas" width="600" height="600"></canvas>
+    <canvas id="decisionBoundary" width="600" height="600"></canvas>
     </div>
     <div class="flex-col" style="width: 25%;"></div>
   </div>

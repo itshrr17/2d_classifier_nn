@@ -92,33 +92,37 @@ function sampleCanvas(ctx, numSamples) {
     return samples;
 }
 
-export function drawDecisionBoundary(nn, encodeResult) {
-    const canvas = document.getElementById("canvas");
+
+export function hideDecisionBoundary() {
+    const canvas = document.getElementById("decisionBoundary");
+    canvas.style.display = 'none';
+    canvas.style.zIndex = '-1';
+}
+
+export async function drawDecisionBoundary(nn, encodeResult, blockSize = state.blockSize) {
+    const canvas = document.getElementById("decisionBoundary");
+    canvas.style.display = 'block';
+    canvas.style.zIndex = '10';
     const ctx = canvas.getContext("2d");
-    const imgData = ctx.createImageData(canvas.width, canvas.height);
 
-    for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-            // Normalize coordinates as used in training
-            const input = [[x / canvas.width, y / canvas.height]];
+    const width = canvas.width;
+    const height = canvas.height;
+
+    for (let y = 0; y < height; y += blockSize) {
+        for (let x = 0; x < width; x += blockSize) {
+            const input = [[(x + blockSize/2) / width, (y + blockSize/2) / height]];
             const predIdx = nn.predict(input)[0];
-
-            // Get color for this class (use encodeResult.classes and colorMapping)
             const classLabel = encodeResult.classes[predIdx];
-            // Find the RGB string for this class
             const rgbStr = Object.keys(colorMapping).find(
                 key => colorMapping[key] === classLabel
             ) || "255,255,255";
             const [r, g, b] = rgbStr.split(',').map(Number);
-
-            const idx = (y * canvas.width + x) * 4;
-            imgData.data[idx] = r;
-            imgData.data[idx + 1] = g;
-            imgData.data[idx + 2] = b;
-            imgData.data[idx + 3] = 60; // alpha for transparency
+            ctx.fillStyle = `rgba(${r},${g},${b},0.24)`;
+            ctx.fillRect(x, y, blockSize, blockSize);
         }
+        // Yield to UI every row
+        if (y % 32 === 0) await new Promise(r => setTimeout(r, 0));
     }
-    ctx.putImageData(imgData, 0, 0);
 }
 
 document.getElementById("populate").addEventListener("click", () => {
@@ -138,10 +142,26 @@ document.getElementById("populate").addEventListener("click", () => {
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
+    // Clear main canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear decision boundary overlay if present
+    const boundaryCanvas = document.getElementById("decisionBoundary");
+    if (boundaryCanvas) {
+        const bctx = boundaryCanvas.getContext("2d");
+        bctx.clearRect(0, 0, boundaryCanvas.width, boundaryCanvas.height);
+        boundaryCanvas.style.display = 'none';
+        boundaryCanvas.style.zIndex = '-1';
+    }
+    // Reset state
     state.hasPainted = false;
     state.samplePoints = [];
-    console.log("Canvas cleared.");
+    // Optionally reset other UI elements
+    const classesCount = document.getElementById("classesCount");
+    if (classesCount) classesCount.textContent = 'No data';
+    const outputSize = document.getElementById("outputSize");
+    if (outputSize) outputSize.textContent = '0';
+    // Log
+    console.log("Canvas and overlays cleared.");
 });
 
 document.getElementById("predictionMode").addEventListener("click", () => {
@@ -162,7 +182,7 @@ canvas.addEventListener("mousemove", (e) => {
     
     const nn = state.currentModel;
 
-    const pred = nn.predictWithConfidence([x, y])[0];
+    const pred = nn.predictWithConfidence([[x / 600, y / 600]])[0];
     const label = getColorFromPrediction(pred.class, nn.encodedData);
     console.log(x, y, label, pred.confidence);
 });

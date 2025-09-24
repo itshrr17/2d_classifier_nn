@@ -19,6 +19,12 @@ canvas {
   background: #f0f0f0;
 }
 
+#decisionBoundary {
+  position: absolute;
+  pointer-events: none; /* Allow clicks to pass through */
+  z-index: -1;
+}
+
 #toolbar { position: absolute;
   top: 20px;
   left: 20px;

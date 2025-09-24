@@ -11,6 +11,7 @@ let initialState = {
     predictionMode: false,
     hiddenLayers: [64, 64, 64, 64], // default hidden layers
     outputSize: 0,   // default classes
+    blockSize: 4,    // for decision boundary
 }
 
 const reactive = {
