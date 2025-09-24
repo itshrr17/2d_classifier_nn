@@ -1,115 +1,92 @@
+
+// === Canvas Setup ===
 import { state, colors, colorMapping } from "./db.js";
-
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d", {
-    willReadFrequently: true // optimize for frequent read operations
-});
-
-const minBrushSize = 70;
-const maxBrushSize = 200;
-
-// coords
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
+const minBrushSize = 70, maxBrushSize = 200;
 let lastX, lastY;
 
+
+// === Canvas Events ===
 canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
-    if (e.deltaY < 0) {
-        state.brushSize = Math.min(state.brushSize + 5, maxBrushSize);
-    } else {
-        state.brushSize = Math.max(state.brushSize - 5, minBrushSize);
-    }
+    state.brushSize = e.deltaY < 0
+        ? Math.min(state.brushSize + 5, maxBrushSize)
+        : Math.max(state.brushSize - 5, minBrushSize);
     console.log("Brush size:", state.brushSize);
 });
+
 canvas.addEventListener("mousedown", (e) => {
     state.painting = true;
-    state.brushColor =  colors[colors.indexOf(state.brushColor) + 1] || colors[0];
+    state.brushColor = colors[(colors.indexOf(state.brushColor) + 1) % colors.length];
     console.log("Brush color:", state.brushColor);
     [lastX, lastY] = getPos(e);
 });
 
-canvas.addEventListener("mouseup", () => state.painting = false);
-canvas.addEventListener("mouseout", () => state.painting = false);
+canvas.addEventListener("mouseup", () => (state.painting = false));
+canvas.addEventListener("mouseout", () => (state.painting = false));
 
 canvas.addEventListener("mousemove", (e) => {
     if (!state.painting) return;
-    
     let [x, y] = getPos(e);
     ctx.strokeStyle = state.brushColor;
     ctx.lineWidth = state.brushSize;
-    ctx.lineCap = "round";   // smooth edges
-    ctx.lineJoin = "round";  // smooth corners
-
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(x, y);
     ctx.stroke();
-
-    [lastX, lastY] = [x, y]; // update
+    [lastX, lastY] = [x, y];
     state.hasPainted = true;
 });
 
 function getPos(e) {
-    let rect = canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
     return [e.clientX - rect.left, e.clientY - rect.top];
 }
 
+// === Sampling ===
 function populateCanvas(ctx, numSamples) {
     const samples = [];
     const { width, height } = ctx.canvas;
-
     let i = 0;
-
-    while(i < numSamples) {
-        // generate random (x, y)
+    while (i < numSamples) {
         const x = Math.floor(Math.random() * width);
         const y = Math.floor(Math.random() * height);
-
         const data = ctx.getImageData(x, y, 1, 1).data;
-        const r = data[0], g = data[1], b = data[2], a = data[3];
-
-        const color = `${r},${g},${b},${a}`;
-
-        // ignore unknown colors
-        if(colorMapping[color] === undefined) continue;
-        
-        const point = { 
-            x: x / width,
-            y: y / height,
-            label: colorMapping[color]
-        }
-
-        samples.push(point);
-
-
+        const color = `${data[0]},${data[1]},${data[2]},${data[3]}`;
+        if (colorMapping[color] === undefined) continue;
+        samples.push({ x: x / width, y: y / height, label: colorMapping[color] });
         // Draw a small dot at sampled location
         ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2); // radius 4px for sample point
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fill();
         i++;
     }
-
     return samples;
 }
 
+// === Populate Button ===
 document.getElementById("populate").addEventListener("click", () => {
-    const numSamples = 100; // Number of points to sample
+    const numSamples = 100;
     const samples = populateCanvas(ctx, numSamples);
-    state.samplePoints = state.samplePoints.concat(...samples);
-
+    state.samplePoints = state.samplePoints.concat(samples);
+    // Update class distribution
     const labels = {};
-    state.samplePoints.forEach(p => labels[p.label]++ || (labels[p.label] = 1));
-    const text = Object.entries(labels).map(([k,v]) => `${k}: ${(v / state.samplePoints.length * 100).toFixed(2)}%`).join(', ');
+    state.samplePoints.forEach(p => labels[p.label] = (labels[p.label] || 0) + 1);
+    const text = Object.entries(labels)
+        .map(([k, v]) => `${k}: ${(v / state.samplePoints.length * 100).toFixed(2)}%`)
+        .join(', ');
     document.getElementById("classesCount").textContent = text || 'No data';
-
+    document.getElementById('outputSize').innerText = Object.keys(labels).length - 1;
     console.log("Class distribution:", labels);
     console.log(`Sampled ${samples.length} points. Total samples: ${state.samplePoints.length}`);
-
-    document.getElementById('outputSize').innerText = Object.keys(labels).length - 1;
 });
 
+// === Clear Button ===
 document.getElementById("clearBtn").addEventListener("click", () => {
-    // Clear main canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // Clear decision boundary overlay if present
     const boundaryCanvas = document.getElementById("decisionBoundary");
@@ -122,18 +99,17 @@ document.getElementById("clearBtn").addEventListener("click", () => {
     // Reset state
     state.hasPainted = false;
     state.samplePoints = [];
-    // Optionally reset other UI elements
+    // Reset UI
     const classesCount = document.getElementById("classesCount");
     if (classesCount) classesCount.textContent = 'No data';
     const outputSize = document.getElementById("outputSize");
     if (outputSize) outputSize.textContent = '0';
-    // Log
     console.log("Canvas and overlays cleared.");
 });
 
+// === Prediction Mode Toggle ===
 document.getElementById("predictionMode").addEventListener("click", () => {
-    if(state.currentModel === null) return;
-
+    if (!state.currentModel) return;
     state.predictionMode = !state.predictionMode;
     const ele = document.getElementById("predictionMode");
     ele.innerText = state.predictionMode ? "Prediction: ON" : "Prediction: OFF";
@@ -144,8 +120,7 @@ function getColorFromPrediction(predIndex, encodeResult) {
   return encodeResult.classes[predIndex];
 }
 
-
-// Floating prediction label element
+// === Floating Prediction Label ===
 let predLabelDiv = document.getElementById('predictionLabelDiv');
 if (!predLabelDiv) {
     predLabelDiv = document.createElement('div');
@@ -159,16 +134,12 @@ canvas.addEventListener("mousemove", (e) => {
         predLabelDiv.style.display = 'none';
         return;
     }
-
     let [x, y] = getPos(e);
     const nn = state.currentModel;
     const pred = nn.predictWithConfidence([[x / 600, y / 600]])[0];
     const label = getColorFromPrediction(pred.class, nn.encodedData);
-
-    // Find color for label
     const rgbStr = Object.keys(colorMapping).find(key => colorMapping[key] === label) || "255,255,255";
     const [r, g, b] = rgbStr.split(',').map(Number);
-
     predLabelDiv.textContent = `${label} (${pred.confidence}%)`;
     predLabelDiv.style.background = `rgba(${r},${g},${b},0.85)`;
     predLabelDiv.style.color = (r*0.299 + g*0.587 + b*0.114 > 186) ? '#222' : '#fff';
@@ -181,25 +152,23 @@ canvas.addEventListener("mouseleave", () => {
     predLabelDiv.style.display = 'none';
 });
 
+// === Input Scroll Helper ===
 function makeInputScrollable(input) {
-  input.addEventListener("wheel", e => {
-    e.preventDefault(); // prevent page scroll
-
-    let step = parseFloat(input.step) || 1;
-    let decimals = (step.toString().split(".")[1] || "").length; // number of decimals
-    let min = parseFloat(input.min) || 0;
-    let max = parseFloat(input.max) || 100;
-    let value = parseFloat(input.value) || min;
-
-    if (e.deltaY < 0) value += step; // scroll up → increase
-    else value -= step;               // scroll down → decrease
-
-    value = Math.min(Math.max(value, min), max); // clamp
-    input.value = value.toFixed(decimals);       // format to step decimals
-  });
+    input.addEventListener("wheel", e => {
+        e.preventDefault();
+        let step = parseFloat(input.step) || 1;
+        let decimals = (step.toString().split(".")[1] || "").length;
+        let min = parseFloat(input.min) || 0;
+        let max = parseFloat(input.max) || 100;
+        let value = parseFloat(input.value) || min;
+        if (e.deltaY < 0) value += step;
+        else value -= step;
+        value = Math.min(Math.max(value, min), max);
+        input.value = value.toFixed(decimals);
+    });
 }
-
-makeInputScrollable(document.getElementById("learningRateInput"));
-makeInputScrollable(document.getElementById("epoch"));
-makeInputScrollable(document.getElementById("blockSize"));
+['learningRateInput', 'epoch', 'blockSize'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) makeInputScrollable(el);
+});
 

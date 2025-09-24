@@ -93,20 +93,6 @@ export class NeuralNetwork {
     }
   }
 
-  // async train(X, y, epochs = 1000, onProgress = null) {
-  //   for (let epoch = 0; epoch < epochs; epoch++) {
-  //       this.forward(X);
-  //       this.backward(X, y);
-
-  //       // call onProgress every few epochs OR on the last epoch
-  //       if (onProgress && (epoch % Math.ceil(epochs / 100) === 0 || epoch === epochs - 1)) {
-  //           const acc = this.accuracy(X, y).toFixed(2);
-  //           onProgress(epoch + 1, epochs, acc); // note: epoch+1 for 1-based
-  //           await new Promise(resolve => setTimeout(resolve, 0)); // allow UI update
-  //       }
-  //   }
-  // }
-
   async train(X, y, epochs = 1000, onProgress = null) {
     for (let epoch = 0; epoch < epochs; epoch++) {
       const yPred = this.forward(X);
@@ -120,7 +106,6 @@ export class NeuralNetwork {
       }
     }
   }
-
 
   predict(X) {
     const probs = this.forward(X);
