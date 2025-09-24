@@ -1,3 +1,16 @@
+// Log panel: override console.log to also print to logPanel
+const logPanel = document.getElementById('logPanel');
+if (logPanel) {
+  const origLog = console.log;
+  console.log = function(...args) {
+    origLog.apply(console, args);
+    const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a))).join(' ');
+    const line = document.createElement('div');
+    line.textContent = msg;
+    logPanel.appendChild(line);
+    logPanel.scrollTop = logPanel.scrollHeight;
+  };
+}
 
 import { state, colorMapping } from './db.js';
 import { NeuralNetwork } from './model/best.js'
@@ -31,9 +44,9 @@ function trainTestSplit(X, Y, testRatio = 0.25) {
 }
 
 const progress = document.getElementById("trainProgress");
-const log = document.getElementById("trainLog");
 
 document.getElementById('trainBtn').addEventListener('click', async() => {
+  if(state.samplePoints.length === 0) return;
   let X = [], Y = [];
   const data = state.samplePoints.filter(p => p.label); // drop unlabled points
 
@@ -71,8 +84,6 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
       accuracyEle.innerText = acc + " %";
       lossEle.innerText = loss;
   });
-
-  log.innerText = "Training complete!";
 
   state.trainingAccuracy = nn.accuracy(X_train, Y_train).toFixed(2) + " %";
   state.testAccuracy = nn.accuracy(X_test, Y_test).toFixed(2) + " %";
@@ -168,8 +179,7 @@ function renderHiddenLayers() {
 
     const removeBtn = document.createElement('span');
     removeBtn.textContent = '( x )';
-    removeBtn.style.cursor = 'pointer';
-    removeBtn.style.marginLeft = '10px';
+    removeBtn.classList.add('removeLayerBtn')
     removeBtn.onclick = () => {
       state.hiddenLayers.splice(idx, 1);
       renderHiddenLayers();

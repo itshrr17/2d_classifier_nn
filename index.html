@@ -8,58 +8,74 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjs@14.7.0/lib/browser/math.min.js"></script>
 </head>
 <body>
-  <div class="flex flex-col" style="height: 100%;">
-  <div id="toolbar">
-    <span style="margin-left:10px">Draw colors!</span>
-    <button id="clearBtn">Clear</button>
-    <button id="populate">Populate</button>
-    <button id="trainBtn">Train</button>
-    <span>Epoch: <input id="epoch" value="100" step="100" max="100000" min="100" style="width: 80px;"/></span>
-    <button id="predictionMode">Prediction: OFF</button>
-    <button id="decisionBoundaryBtn">Decision Boundary: OFF</button>
-    <span>Block size: <input id="blockSize" value="4" step="2" max="50" min="1" style="width: 40px;"/></span>
-  </div>
-  <div class="flex" style="width: 100%;"> 
-    <div class="flex-col" style="width: 25%;">
-      <div>Brush Color: <span id="brushColor">None</span></div>
-      <div>Brush Size: <span id="brushSize">100</span></div>
-      <div>Sample Points: <span id="samplePoints">0</span></div>
-      <div>
-        <progress id="trainProgress" max="100" value="0"></progress>
-      </div>
-      <div>
-        Acc: <span id="acc">0%</span>
-        Loss: <span id="loss">0.00</span>
-        <span id="trainLog"></span>
-      </div>
-      <h4>Model Accuracy -</h4>
-      <div> Training: <span id="trainingAccuracy"></span></div>
-      <div> Testing: <span id="testAccuracy"></span></div>
+  <!-- Toolbar: Main controls -->
+  <nav id="toolbar" aria-label="Main controls">
+    <span class="toolbar-title">Draw colors</span>
+    <button id="clearBtn" type="button">Clear</button>
+    <button id="populate" type="button">Populate</button>
+    <button id="trainBtn" type="button">Train</button>
+    <span>Epoch: <input id="epoch" type="number" value="100" step="100" max="100000" min="100" style="width: 80px;"/></span>
+    <button id="predictionMode" type="button">Prediction: OFF</button>
+    <button id="decisionBoundaryBtn" type="button">Show Decision Boundary</button>
+    <span>Epoch: <input id="blockSize" type="number" value="4" step="1" max="30" min="2" style="width: 40px;"/></span>
+  </nav>
 
-      <h4>Neural Network Info</h4>
-      <div>
-        Learning rate:
-        <input type="number" id="learningRateInput" value="0.1" min="0.001" max="1" step="0.01" style="width:60px;">
+  <main class="flex" style="width: 100%;">
+    <!-- Sidebar: Model and brush info -->
+    <aside class="flex-col" style="width: 25%;">
+      <section aria-label="Brush Info">
+        <div>Brush Color: <span id="brushColor">None</span></div>
+        <div>Brush Size: <span id="brushSize">100</span></div>
+        <div>Sample Points: <span id="samplePoints">0</span></div>
+      </section>
+      <space></space>
+      <section aria-label="Training Progress">
+        <progress id="trainProgress" max="100" value="0"></progress>
+        <div>
+          Acc: <span id="acc">0%</span>
+          Loss: <span id="loss">0.00</span>
+        </div>
+      </section>
+      <space></space>
+      <section aria-label="Model Accuracy">
+        <h4>Model Accuracy</h4>
+        <div>Training: <span id="trainingAccuracy"></span></div>
+        <div>Testing: <span id="testAccuracy"></span></div>
+      </section>
+      <space></space>
+      <section aria-label="Neural Network Info">
+        <h4>Neural Network Info</h4>
+        <div>
+          Learning rate:
+          <input type="number" id="learningRateInput" value="0.05" min="0.001" max="1" step="0.01" style="width:60px;">
+        </div>
+        <div>Classes: <span id="classesCount">No data</span></div>
+        <space></space>
+        <h4>Layers</h4>
+        <div><b>Input (2 x 1)</b></div>
+        <b>Hidden Layers:</b><span id="addLayerBtn" type="button">( + )</span>
+        <div id="hiddenLayersList"></div>
+        <div>
+          <b>Output Layer:</b> <space />
+          Softmax (<span id="outputPrevSize">0</span> x <span id="outputSize">0</span>)
+        </div>
+      </section>
+    </aside>
+
+    <!-- Main canvas area -->
+    <section class="flex-col" style="width: 50%;">
+      <div style="position:relative; width:600px; height:600px;">
+        <canvas id="canvas" width="600" height="600" tabindex="0" aria-label="Drawing canvas"></canvas>
+        <canvas id="decisionBoundary" width="600" height="600" style="position:absolute; left:0; top:0; z-index:10; pointer-events:none; display:none;"></canvas>
       </div>
-      <div>Classes: <span id="classesCount">No data</span></div>
-      <h4>Layers:</h4>
-      <div>
-        <b>Input Layer: </b>(2 x 1)
-      </div>
-      <div><b>Hidden Layers:</b><span id="addLayerBtn" type="button">( + )</span></div>
-      <div id="hiddenLayersList"></div>
-      <div>
-        <b>Output Layer: </b>
-        <div>Softmax (<span id="outputPrevSize">0</span> x <span id="outputSize">0</span>)</div>
-      </div>
-    </div>
-    <div class="flex-col" style="width: 50%;">
-    <canvas id="canvas" width="600" height="600"></canvas>
-    <canvas id="decisionBoundary" width="600" height="600"></canvas>
-    </div>
-    <div class="flex-col" style="width: 25%;"></div>
-  </div>
-  </div>
+    </section>
+
+    <!-- Log panel sidebar -->
+    <aside class="flex-col" style="width: 25%; padding-left: 0;">
+      <div id="logPanel"></div>
+    </aside>
+  </main>
+
   <script type="module" src="draw.js"></script>
   <script type="module" src="index.js" defer></script>
 </body>

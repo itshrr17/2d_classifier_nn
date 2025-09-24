@@ -1,96 +1,163 @@
-html {
+/* === Base Layout === */
+html, body {
   height: 100%;
   width: 100%;
-}
-  
-body {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
   background: #242424;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  color: #f0f0f0; 
+  color: #f0f0f0;
   font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+  min-width: 100vw;
+  padding: 0;
+  margin: 0;
 }
 
-h4 {
-  margin: 0.5em 0;
-}
-
-canvas {
-  border: 2px solid white;
-  background: #f0f0f0;
-}
-
-#decisionBoundary {
-  position: absolute;
-  pointer-events: none; /* Allow clicks to pass through */
-  z-index: -1;
-}
-
-#toolbar {
-  color: white;
-  width: 100%;
-  padding: 1em 0.2em;
-}
-
-button {
-  margin-left: 10px;
-  font-family: 'Courier New', Courier, monospace;
-}
-
-.flex {
+main.flex {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   width: 100%;
+  min-height: 100vh;
 }
 
 .flex-col {
   display: flex;
   flex-direction: column;
-  justify-content: left;
-  align-items: start;
+  align-items: flex-start;
   width: 100%;
-  padding: 0.5em;
+  box-sizing: border-box;
+  padding: 3em;
 }
 
+/* === Toolbar === */
+#toolbar {
+  position: sticky;
+  background: #24242425;
+  top: 0;
+  left: 0;
+  color: #fff;
+  padding: 0.5em 1em;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  backdrop-filter: blur(50px);
+}
+
+.toolbar-title {
+  margin-right: 1em;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+#toolbar span {
+  margin-left: 10px;
+}
+
+button {
+  margin-left: 10px;
+  font-family: inherit;
+  font-size: 1em;
+  background: #33333350;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3em 0.8em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button:hover, button:focus {
+  background: #444;
+}
+
+/* === Canvas === */
+canvas {
+  border: 2px solid #fff;
+  background: #f0f0f0;
+  display: block;
+}
+#canvas {
+  z-index: 1;
+}
+#decisionBoundary {
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* === Sidebar and Info === */
+aside section {
+  margin-bottom: 1.2em;
+}
+h4 {
+  margin: 0.5em 0 0.5em 0;
+  font-size: 1.1em;
+  color: #ffd700;
+}
+
+progress {
+  width: 90%;
+  height: 1em;
+  margin: 0.5em 0;
+}
+
+/* === Inputs === */
 input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button {  
+input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: auto;
   margin: 0;
   background-color: #242424;
 }
 
 input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
-    overflow: clip !important;
-    margin: 0;
-    background-color: transparent;
-    padding: 0;
-    color: inherit;
-    border: transparent;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: inherit;
-    border-bottom: #c2c2c2 1px solid;
-}
-
-#trainProgress {
-  margin: 0.5em 0;
-}
-
-space {
-  content: "";
+  overflow: clip !important;
   margin: 0;
-  display: block;
-  line-height: 1.4em;
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+  border: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  border-bottom: #c2c2c2 1px solid;
 }
 
+/* === Layer Controls === */
+#addLayerBtn {
+  cursor: pointer;
+  margin-left: 0.5em;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+#hiddenLayersList {
+  display: block;
+  max-height: 150px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  margin-bottom: 0.5em;
+}
+
+/* === Misc === */
 ul {
   margin: 0.5em;
 }
 
-#addLayerBtn {
-  cursor: pointer;
+/* === Floating prediction label for prediction mode === */
+#predictionLabelDiv {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: none;
+  transition: background 0.1s, color 0.1s;
 }
 
 #hiddenLayersList {
@@ -112,6 +179,12 @@ ul {
   color: #aaa;
 }
 
+.removeLayerBtn {
+  cursor: pointer;
+  margin-left: 10px;
+  color:rgb(199, 41, 41);
+}
+
 /* Floating prediction label for prediction mode */
 #predictionLabelDiv {
   position: fixed;
@@ -124,4 +197,16 @@ ul {
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   display: none;
   transition: background 0.1s, color 0.1s;
+}
+
+#logPanel {
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5em;
+  max-height: 70vh;
+  overflow-y: auto;
+  font-size: 0.95em;
+  font-family: monospace;
+  white-space: pre-wrap;
+  width: 100%;
 }
