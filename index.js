@@ -1,7 +1,6 @@
 
-import { state } from './db.js';
+import { state, colorMapping } from './db.js';
 import { NeuralNetwork } from './model/best.js'
-import { drawDecisionBoundary, hideDecisionBoundary } from './draw.js';
 import { encodeLabels } from './utils.js';
 
 function trainTestSplit(X, Y, testRatio = 0.25) {
@@ -86,15 +85,55 @@ document.getElementById('trainBtn').addEventListener('click', async() => {
   state.models.push({ model: nn, trainingAccuracy: state.trainingAccuracy, testAccuracy: state.testAccuracy });
 });
 
+function hideDecisionBoundary() {
+    const canvas = document.getElementById("decisionBoundary");
+    canvas.style.display = 'none';
+    canvas.style.zIndex = '-1';
+}
+
+let isDrawing = false;
+
+async function drawDecisionBoundary(nn, encodeResult, blockSize = state.blockSize) {
+    if (isDrawing) return;
+    isDrawing = true;
+
+    const canvas = document.getElementById("decisionBoundary");
+    canvas.style.display = 'block';
+    canvas.style.zIndex = '10';
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    try {
+        for (let y = 0; y < height; y += blockSize) {
+            for (let x = 0; x < width; x += blockSize) {
+                const input = [[(x + blockSize/2) / width, (y + blockSize/2) / height]];
+                const predIdx = await nn.predict(input)[0];
+                const classLabel = encodeResult.classes[predIdx];
+                const rgbStr = Object.keys(colorMapping).find(key => colorMapping[key] === classLabel) || "255,255,255";
+                const [r, g, b] = rgbStr.split(',').map(Number);
+                ctx.fillStyle = `rgba(${r},${g},${b},0.24)`;
+                ctx.fillRect(x, y, blockSize, blockSize);
+            }
+            // Yield to UI every row
+            if (y % 32 === 0) await new Promise(r => setTimeout(r, 0));
+        }
+    } finally {
+        // ✅ always reset lock even if error occurs
+        isDrawing = false;
+    }
+}
 
 // Toggle decision boundary overlay
 let boundaryVisible = false;
 document.getElementById('decisionBoundaryBtn').addEventListener('click', () => {
-  if (!state.currentModel || !state.currentModel.encodedData) {
-    alert('Train the model first!');
-    return;
-  }
+  if (!state.currentModel || !state.currentModel.encodedData || isDrawing) return;
+
   boundaryVisible = !boundaryVisible;
+
   if (boundaryVisible) {
     drawDecisionBoundary(state.currentModel, state.currentModel.encodedData);
     document.getElementById('decisionBoundaryBtn').innerText = 'Hide Decision Boundary';
@@ -122,8 +161,6 @@ function renderHiddenLayers() {
     input.type = 'number';
     input.value = size;
     input.min = 1;
-    input.style.width = '60px';
-    input.style.marginLeft = '10px';
     input.onchange = (e) => {
       state.hiddenLayers[idx] = parseInt(e.target.value) || 1;
       renderHiddenLayers(); // re-render to update sizes
@@ -144,10 +181,7 @@ function renderHiddenLayers() {
 
     // Layer size info
     const sizeInfo = document.createElement('div');
-    sizeInfo.style.fontSize = '0.8em';
-    sizeInfo.style.textAlign = 'right';
-    sizeInfo.style.color = '#aaa';
-    sizeInfo.style.margin = '2px 0 8px 10px';
+    sizeInfo.classList.add('size-info')
     sizeInfo.textContent = `(${prevSize} × ${size})`;
     prevSize = size;
 

@@ -53,7 +53,7 @@ function getPos(e) {
     return [e.clientX - rect.left, e.clientY - rect.top];
 }
 
-function sampleCanvas(ctx, numSamples) {
+function populateCanvas(ctx, numSamples) {
     const samples = [];
     const { width, height } = ctx.canvas;
 
@@ -92,42 +92,9 @@ function sampleCanvas(ctx, numSamples) {
     return samples;
 }
 
-
-export function hideDecisionBoundary() {
-    const canvas = document.getElementById("decisionBoundary");
-    canvas.style.display = 'none';
-    canvas.style.zIndex = '-1';
-}
-
-export async function drawDecisionBoundary(nn, encodeResult, blockSize = state.blockSize) {
-    const canvas = document.getElementById("decisionBoundary");
-    canvas.style.display = 'block';
-    canvas.style.zIndex = '10';
-    const ctx = canvas.getContext("2d");
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    for (let y = 0; y < height; y += blockSize) {
-        for (let x = 0; x < width; x += blockSize) {
-            const input = [[(x + blockSize/2) / width, (y + blockSize/2) / height]];
-            const predIdx = nn.predict(input)[0];
-            const classLabel = encodeResult.classes[predIdx];
-            const rgbStr = Object.keys(colorMapping).find(
-                key => colorMapping[key] === classLabel
-            ) || "255,255,255";
-            const [r, g, b] = rgbStr.split(',').map(Number);
-            ctx.fillStyle = `rgba(${r},${g},${b},0.24)`;
-            ctx.fillRect(x, y, blockSize, blockSize);
-        }
-        // Yield to UI every row
-        if (y % 32 === 0) await new Promise(r => setTimeout(r, 0));
-    }
-}
-
 document.getElementById("populate").addEventListener("click", () => {
     const numSamples = 100; // Number of points to sample
-    const samples = sampleCanvas(ctx, numSamples);
+    const samples = populateCanvas(ctx, numSamples);
     state.samplePoints = state.samplePoints.concat(...samples);
 
     const labels = {};
@@ -136,9 +103,9 @@ document.getElementById("populate").addEventListener("click", () => {
     document.getElementById("classesCount").textContent = text || 'No data';
 
     console.log("Class distribution:", labels);
-
     console.log(`Sampled ${samples.length} points. Total samples: ${state.samplePoints.length}`);
-    console.log(state.samplePoints);
+
+    document.getElementById('outputSize').innerText = Object.keys(labels).length - 1;
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {

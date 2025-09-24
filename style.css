@@ -14,6 +14,10 @@ body {
   font-family: 'Courier New', Courier, monospace;
 }
 
+h4 {
+  margin: 0.5em 0;
+}
+
 canvas {
   border: 2px solid white;
   background: #f0f0f0;
@@ -25,10 +29,10 @@ canvas {
   z-index: -1;
 }
 
-#toolbar { position: absolute;
-  top: 20px;
-  left: 20px;
+#toolbar {
   color: white;
+  width: 100%;
+  padding: 1em 0.2em;
 }
 
 button {
@@ -52,9 +56,7 @@ button {
 }
 
 input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button {
-
-  
+input[type=number]::-webkit-outer-spin-button {  
   -webkit-appearance: auto;
   margin: 0;
   background-color: #242424;
@@ -70,6 +72,10 @@ input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio"
     font-family: 'Courier New', Courier, monospace;
     font-size: inherit;
     border-bottom: #c2c2c2 1px solid;
+}
+
+#trainProgress {
+  margin: 0.5em 0;
 }
 
 space {
@@ -89,9 +95,21 @@ ul {
 
 #hiddenLayersList {
   display: block;
-  max-height: 150px;
+  max-height: 250px;
   overflow-y: auto;
+  width: 250px;
   scroll-behavior: smooth;
+  margin: 0.5em 0;
+}
+
+#hiddenLayersList input[type='number'] {
+  width: 60px;
+  margin-left: 10px
+}
+
+#hiddenLayersList .size-info {
+  font-size: 0.8em;
+  color: #aaa;
 }
 
 /* Floating prediction label for prediction mode */
