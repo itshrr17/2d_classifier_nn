@@ -29,8 +29,8 @@ export class NeuralNetwork {
 
     for (let i = 0; i < this.sizes.length - 1; i++) {
       // Simple ReLU weights initialization: small random values
-      this.W.push(math.random([this.sizes[i], this.sizes[i+1]], -0.01, 0.01));
-      this.b.push(math.random([1, this.sizes[i+1]], -0.01, 0.01));
+      // this.W.push(math.random([this.sizes[i], this.sizes[i+1]], -0.01, 0.01));
+      // this.b.push(math.random([1, this.sizes[i+1]], -0.01, 0.01));
 
       // He initialization for ReLU: weights ~ N(0, sqrt(2/fan_in))
       let std = Math.sqrt(2 / this.sizes[i]);
