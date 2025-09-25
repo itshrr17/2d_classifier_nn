@@ -3,7 +3,7 @@ import { state, COLORS } from '../app/state.js';
 
 export function setupBrushEvents(canvas, ctx) {
   let lastX, lastY;
-  const minBrushSize = 70, maxBrushSize = 200;
+  const minBrushSize = 10, maxBrushSize = 200;
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
